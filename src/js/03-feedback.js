@@ -1,35 +1,52 @@
-import throttle from "lodash.throttle";
+import throttle from 'lodash.throttle';
+import localStorageApi from './lacalStorage';
 
-const STORAGE_KEY = "feedback-form-state";
+const STORAGE_KEY = 'feedback-form-state';
+const formEl = document.querySelector('.feedback-form');
 
-const formEl = document.querySelector('feedback-form');
-const email = document.querySelector('[name="email"]');
-const message = document.querySelector('[name="message"]');
+const userData = {};
 
-formEl.addEventListener('submit', onFormSubmit);
-formEl.addEventListener('input', throttle(onFormData, 500));
 
-function onFormSubmit(event) {
-    event.preventDefault();
-    event.currentTarget.reset();
-    console.log(localStorage.getItem(STORAGE_KEY));
-    localStorage.removeItem(STORAGE_KEY);
-} 
 
-function onFormData() {
-    const formData = {
-      email: email.value,
-      message: message.value,
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-  }
-  
-  localStorageSaveData();
-  
-  function localStorageSaveData() {
-    let savedData = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (savedData) {
-      email.value = savedData.email;
-      message.value = savedData.message;
+const fillForm = () => { 
+    const userDataFromLS = localStorageApi.load(STORAGE_KEY); 
+
+    if (userDataFromLS === undefined) { 
+        return;
     }
-  }
+
+    const formElements = formEl.elements; 
+
+    for (const key in userDataFromLS) { 
+    if (userDataFromLS.hasOwnProperty(key)) {  
+        formElements[key].value = userDataFromLS[key]; 
+    }
+    }
+};
+
+const onFormElChange = event => { 
+    const target = event.target; 
+
+    const formElValue = target.value; 
+    const formElName = target.name; 
+
+    userData[formElName] = formElValue; 
+
+    localStorageApi.save(STORAGE_KEY, userData); 
+};
+
+const onformSubmit = event => { 
+    event.preventDefault(); 
+
+    console.dir(localStorageApi.load(STORAGE_KEY)); 
+
+    localStorageApi.remove(STORAGE_KEY); 
+    event.currentTarget.reset(); 
+};
+
+formEl.addEventListener('input', throttle(onFormElChange, 500));
+formEl.addEventListener('submit', onformSubmit);
+
+
+
+fillForm();
